@@ -1,16 +1,16 @@
 import argparse
 import gin
-import os
+import glob
 import jax
+import os
+import requests
 import trax
-from trax.supervised import inputs
 
+from trax.supervised import inputs
 import numpy as onp
 import jax.numpy as np
 
-import glob
 
-from start_tpu import config
 from configs import train_config
 
 parser = argparse.ArgumentParser(
@@ -25,8 +25,23 @@ parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--learning_rate', type=float, default=0.0001)
 parser.add_argument('--multi_factor_schedule',
                     default=False, action='store_true')
+parser.add_argument('--tpu',
+                    default=False, action='store_true')
+
 
 args = parser.parse_args()
+
+if args.tpu:
+    if 'TPU_DRIVER_MODE' not in globals():
+      url = 'http://' + os.environ['COLAB_TPU_ADDR'].split(':')[0] + ':8475/requestversion/tpu_driver0.1-dev20191206'
+      resp = requests.post(url)
+      TPU_DRIVER_MODE = 1
+
+    # The following is required to use TPU Driver as JAX's backend.
+    from jax.config import config
+    config.FLAGS.jax_xla_backend = "tpu_driver"
+    config.FLAGS.jax_backend_target = "grpc://" + os.environ['COLAB_TPU_ADDR']
+    print(config.FLAGS.jax_backend_target)
 
 
 def gen_inputs(n_devices):
