@@ -2,3 +2,4 @@ jax
 jaxlib
 git+https://github.com/google/trax.git@v1.2.2
 tokenizers
+gin

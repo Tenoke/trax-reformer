@@ -83,7 +83,7 @@ def gen_validation_inputs(n_devices):
         # different validation each time but consistent across the run
     ids = next(gen_inputs(n_devices))
     while True:
-        return ids
+        yield ids
 
 
 def create_fixed_training_schedule(lr):
