@@ -15,7 +15,7 @@ import json
 from tokenizers import ByteLevelBPETokenizer
 
 from start_tpu import config
-from config import train_config
+from configs import train_config
 
 parser = argparse.ArgumentParser(
     description='Tokenize a folder of text file(s)')
