@@ -7,12 +7,8 @@ from trax.supervised import inputs
 
 import numpy as onp
 import jax.numpy as np
-from scipy.special import softmax
-
 
 import glob
-import json
-from tokenizers import ByteLevelBPETokenizer
 
 from start_tpu import config
 from configs import train_config
@@ -81,9 +77,11 @@ def create_fixed_training_schedule(lr):
         def learning_rate(step):
             return {'learning_rate': np.asarray(lr, dtype=np.float32)}
         return learning_rate
+    return FixedTrainingSchedule
 
 
 def train():
+    gin.parse_config(train_config)
     schedule = create_fixed_training_schedule(args.learning_rate)
     if args.multi_factor_schedule:
         schedule = lr.MultifactorSchedule
