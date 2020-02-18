@@ -26,6 +26,10 @@ parser.add_argument('--model_folder', type=str, default='model',
                     help='Folder For saving and loading the model')
 parser.add_argument('--steps_per_epoch', type=int, default=100)
 parser.add_argument('--epochs', type=int, default=10)
+parser.add_argument('--learning_rate', type=float, default=0.0001)
+parser.add_argument('--multi_factor_schedule',
+                    default=False, action='store_true')
+
 args = parser.parse_args()
 
 
@@ -71,7 +75,7 @@ def gen_validation_inputs(n_devices):
         return ids
 
 
-def create_fixed_training_schedule(lr=0.0001):
+def create_fixed_training_schedule(lr):
     # Yes, it does look unneceserily nested for passing a single float
     def FixedTrainingSchedule(*args, **kwargs):
         def learning_rate(step):
@@ -80,19 +84,22 @@ def create_fixed_training_schedule(lr=0.0001):
 
 
 def train():
+    schedule = create_fixed_training_schedule(args.learning_rate)
+    if args.multi_factor_schedule:
+        schedule = lr.MultifactorSchedule
     output_dir = os.path.expanduser(f'{args.model_folder}/')
     trainer = trax.supervised.Trainer(
         model=trax.models.ReformerLM,
         loss_fn=trax.layers.CrossEntropyLoss,
         optimizer=trax.optimizers.Adam,
-        lr_schedule=FixedTrainingSchedule,
-        # lr_schedule=trax.lr.MultifactorSchedule,
-        inputs=trax.supervised.inputs.Inputs(gen_inputs, gen_inputs2),
+        lr_schedule=schedule,
+        inputs=trax.supervised.inputs.Inputs(gen_inputs, gen_validation_inputs),
         output_dir=output_dir,
         has_weights=True)
 
     for _ in range(args.epochs):
         trainer.train_epoch(n_steps=args.steps_per_epoch, n_eval_steps=1)
+
 
 if __name__ == '__main__':
     train()
