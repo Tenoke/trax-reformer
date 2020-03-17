@@ -92,3 +92,13 @@ ReformerLM.share_qk = %share_qk
 ReformerLM.axial_pos_shape = (128, 512)
 ReformerLM.d_axial_pos_embs= (256, 768)
 """
+
+test_config = """
+TimeBinCausalAttention.bin_length = 128
+TimeBinCausalAttention.n_bins = None
+LSHCausalAttention.n_hashes = 8
+LSHCausalAttention.bucket_capacity_for_inference = 258
+ReformerLM.dropout = 0.0
+TimeBinCausalAttention.dropout = 0.0
+LSHCausalAttention.dropout = 0.0
+"""

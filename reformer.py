@@ -1,4 +1,3 @@
-import argparse
 import gin
 import glob
 import jax
@@ -6,7 +5,7 @@ import os
 import sys
 import requests
 import trax
-
+from functools import partial
 from trax.supervised import inputs
 import numpy as onp
 import jax.numpy as np
@@ -14,40 +13,29 @@ import jax.numpy as np
 
 from configs import train_config
 
-parser = argparse.ArgumentParser(
-    description='Tokenize a folder of text file(s)')
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Tokenize a folder of text file(s)')
 
-parser.add_argument('--data_folder', type=str, default='sample_data',
-                    help='Data folder with 1 or more tokenized files')
-parser.add_argument('--model_folder', type=str, default='model',
-                    help='Folder For saving and loading the model')
-parser.add_argument('--steps_per_epoch', type=int, default=100)
-parser.add_argument('--epochs', type=int, default=10)
-parser.add_argument('--learning_rate', type=float, default=0.0001)
-parser.add_argument('--multi_factor_schedule',
-                    default=False, action='store_true')
-parser.add_argument('--tpu',
-                    default=False, action='store_true')
+    parser.add_argument('--data_folder', type=str, default='sample_data',
+                        help='Data folder with 1 or more tokenized files')
+    parser.add_argument('--model_folder', type=str, default='model',
+                        help='Folder For saving and loading the model')
+    parser.add_argument('--steps_per_epoch', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--learning_rate', type=float, default=0.0001)
+    parser.add_argument('--multi_factor_schedule',
+                        default=False, action='store_true')
+    parser.add_argument('--tpu',
+                        default=False, action='store_true')
 
-
-args = parser.parse_args()
-
-if args.tpu:
-    if 'TPU_DRIVER_MODE' not in globals():
-      url = 'http://' + os.environ['COLAB_TPU_ADDR'].split(':')[0] + ':8475/requestversion/tpu_driver0.1-dev20191206'
-      resp = requests.post(url)
-      TPU_DRIVER_MODE = 1
-
-    # The following is required to use TPU Driver as JAX's backend.
-    from jax.config import config
-    config.FLAGS.jax_xla_backend = "tpu_driver"
-    config.FLAGS.jax_backend_target = "grpc://" + os.environ['COLAB_TPU_ADDR']
-    print(config.FLAGS.jax_backend_target)
+    args = parser.parse_args()
 
 
-def gen_inputs(n_devices):
+
+def gen_inputs(n_devices, folder):
     max_length = int(65536 * 0.98)  # always leave a little padding
-    folder = args.data_folder
     files = glob.glob(f'{folder}/*.npy')
     print(f'first start from {len(files)} files')
     while True:
@@ -80,9 +68,9 @@ def gen_inputs(n_devices):
             yield (inputs, inputs, mask)
 
 
-def gen_validation_inputs(n_devices):
+def gen_validation_inputs(n_devices, folder):
         # different validation each time but consistent across the run
-    ids = next(gen_inputs(n_devices))
+    ids = next(gen_inputs(n_devices, folder))
     while True:
         yield ids
 
@@ -96,7 +84,7 @@ def create_fixed_training_schedule(lr):
     return FixedTrainingSchedule
 
 
-def train():
+def train(args):
     gin.parse_config(train_config)
     schedule = create_fixed_training_schedule(args.learning_rate)
     if args.multi_factor_schedule:
@@ -107,7 +95,7 @@ def train():
         loss_fn=trax.layers.CrossEntropyLoss,
         optimizer=trax.optimizers.Adam,
         lr_schedule=schedule,
-        inputs=trax.supervised.inputs.Inputs(gen_inputs, gen_validation_inputs),
+        inputs=trax.supervised.inputs.Inputs(partial(gen_inputs, folder=args.data_folder), partial(gen_validation_inputs, folder=args.data_folder)),
         output_dir=output_dir,
         has_weights=True)
 
@@ -115,6 +103,18 @@ def train():
         print(f'epoch {i} starting')
         trainer.train_epoch(n_steps=args.steps_per_epoch, n_eval_steps=1)
 
-    sys.exit()
+def main_train(args):
+    if args.tpu:
+        if 'TPU_DRIVER_MODE' not in globals():
+          url = 'http://' + os.environ['COLAB_TPU_ADDR'].split(':')[0] + ':8475/requestversion/tpu_driver0.1-dev20191206'
+          resp = requests.post(url)
+          TPU_DRIVER_MODE = 1
+        # The following is required to use TPU Driver as JAX's backend.
+        from jax.config import config
+        config.FLAGS.jax_xla_backend = "tpu_driver"
+        config.FLAGS.jax_backend_target = "grpc://" + os.environ['COLAB_TPU_ADDR']
+        print(config.FLAGS.jax_backend_target)
+    train(args)
+
 if __name__ == '__main__':
-    train()
+    main_train(args)
