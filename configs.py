@@ -73,20 +73,6 @@ LSHCausalAttention.hard_k = 0
 LSHCausalAttention.dropout = 0.2
 # LSHCausalAttention.drop_for_hash_rate: see top
 
-# Parameters for TransformerLM:
-# ==============================================================================
-TransformerLM.attention_type = %attn_type
-TransformerLM.d_attention_key = %attn_kv
-TransformerLM.d_attention_value = %attn_kv
-TransformerLM.d_model = 1024
-TransformerLM.d_ff = 2048
-TransformerLM.dropout = %dropout
-TransformerLM.max_len = 65536
-TransformerLM.mode = 'train'
-TransformerLM.n_heads = 8
-TransformerLM.n_layers = %n_layers
-TransformerLM.share_qk = %share_qk
-TransformerLM.vocab_size = 258  # Includes pad token and unused EOS token
 
 # Parameters for ReformerLM:
 # ==============================================================================

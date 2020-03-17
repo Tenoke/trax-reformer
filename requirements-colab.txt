@@ -1,5 +1,5 @@
-jax
-jaxlib
+jax==0.1.60
+jaxlib===0.1.41
 git+https://github.com/google/trax.git@v1.2.2
 tokenizers
 gin
