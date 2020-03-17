@@ -3,6 +3,7 @@ import gin
 import glob
 import jax
 import os
+import sys
 import requests
 import trax
 
@@ -16,7 +17,7 @@ from configs import train_config
 parser = argparse.ArgumentParser(
     description='Tokenize a folder of text file(s)')
 
-parser.add_argument('--data_folder', type=str, default='tokenized_data',
+parser.add_argument('--data_folder', type=str, default='sample_data',
                     help='Data folder with 1 or more tokenized files')
 parser.add_argument('--model_folder', type=str, default='model',
                     help='Folder For saving and loading the model')
@@ -110,9 +111,10 @@ def train():
         output_dir=output_dir,
         has_weights=True)
 
-    for _ in range(args.epochs):
+    for i in range(args.epochs):
+        print(f'epoch {i} starting')
         trainer.train_epoch(n_steps=args.steps_per_epoch, n_eval_steps=1)
 
-
+    sys.exit()
 if __name__ == '__main__':
     train()
